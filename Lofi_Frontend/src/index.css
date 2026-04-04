@@ -871,3 +871,77 @@ body {
   0%, 100% { opacity: 0.5; }
   50% { opacity: 1; }
 }
+
+/* ─── MOBILE RESPONSIVENESS OVERRIDES ─── */
+@media (max-width: 768px) {
+  /* 1. Fix Layout Padding */
+  .homePage {
+    padding: 0 16px !important;
+  }
+  
+  .homeLayout {
+    width: 100% !important;
+    margin-top: 50px; /* Leave breathing room for smaller navbars */
+  }
+
+  /* 2. Fix the timer sizing */
+  .timerValue {
+    font-size: 5.5rem !important;
+  }
+  
+  /* 3. Compress Navbar & Floating Buttons to avoid overlapping */
+  .navbar {
+    top: 8px !important;
+    gap: 8px !important;
+    padding: 6px 12px !important;
+  }
+  .navbar a, .navbar button {
+    font-size: 13px !important;
+    padding: 6px 8px !important;
+  }
+  
+  /* 4. Spotify Button Resizing */
+  button[onclick^="redirectToAuthCodeFlow"], 
+  button[onclick^="handleLogout"] {
+    top: 8px !important;
+    right: 8px !important;
+    padding: 6px 10px !important;
+    font-size: 11px !important;
+  }
+  
+  /* 5. Music Player Bar Scaling */
+  .musicBar, .spotifyPlayer {
+    width: 96vw !important;
+    left: 2vw !important;
+    transform: none !important;
+    bottom: 12px !important;
+    padding: 8px 14px !important;
+    flex-wrap: nowrap;
+    gap: 8px;
+  }
+  
+  /* 6. Study Room Fixes */
+  .callGrid {
+    grid-template-columns: 1fr !important;
+  }
+  
+  /* 7. Modal Fixes */
+  .notesModal {
+    width: 96vw !important;
+    height: 85vh !important;
+    margin: auto;
+  }
+  .notesGrid {
+    grid-template-columns: 1fr !important; /* Stack vertically */
+    overflow-y: auto;
+  }
+  .notesList {
+    height: 180px !important;
+    border-right: none !important;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .notesHeaderActions {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+}
