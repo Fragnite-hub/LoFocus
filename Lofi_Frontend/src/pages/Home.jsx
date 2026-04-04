@@ -5,8 +5,8 @@ import TopControls from "./TopControls";
 import FocusTimer from "./FocusTimer";
 import ProgressCard from "./ProgressCard";
 
-// Use Vite proxy in dev: /api -> backend
-const API_BASE = "";
+// Use backend URL from ENV in production. In dev (empty string), it elegantly falls back to Vite's local proxy.
+const API_BASE = import.meta.env.VITE_API_BASE ?? "";
 
 export default function Home({ onOpenNotes }) {
   const [todosTotal, setTodosTotal] = useState(0);

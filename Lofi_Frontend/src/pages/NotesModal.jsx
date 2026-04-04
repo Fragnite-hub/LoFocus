@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
-// Use Vite proxy in dev: /api -> backend
-const API_BASE = "";
+// Use backend URL from ENV in production. In dev (empty string), it elegantly falls back to Vite's local proxy.
+const API_BASE = import.meta.env.VITE_API_BASE ?? "";
 
 function fmt(ts) {
   if (!ts) return "";
