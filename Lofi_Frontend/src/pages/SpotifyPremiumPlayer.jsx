@@ -5,6 +5,7 @@ export default function SpotifyPremiumPlayer({ token }) {
   const [is_paused, setPaused] = useState(false);
   const [is_active, setActive] = useState(false);
   const [current_track, setTrack] = useState(null);
+  const [volume, setVolume] = useState(0.5);
 
   useEffect(() => {
     const script = document.createElement("script");
@@ -24,7 +25,6 @@ export default function SpotifyPremiumPlayer({ token }) {
 
       player.addListener("ready", ({ device_id }) => {
         console.log("Ready with Device ID", device_id);
-        // Automatically transfer Spotify playback to this Web Player!
         fetch("https://api.spotify.com/v1/me/player", {
           method: "PUT",
           headers: {
@@ -60,18 +60,33 @@ export default function SpotifyPremiumPlayer({ token }) {
   }, [token]);
 
   return (
-    <div className="musicBar" style={{ "--vol": "0.5" }}>
-      <button onClick={() => player?.togglePlay()}>
+    <div className="musicBar" style={{ "--vol": Number(volume) }}>
+      <button onClick={() => player?.togglePlay()} style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "36px", height: "36px", borderRadius: "50%", background: "rgba(255, 255, 255, 0.12)", color: "white", border: "1px solid rgba(255, 255, 255, 0.2)", cursor: "pointer", transition: "all 0.15s ease" }} onMouseOver={e => { e.currentTarget.style.transform = "scale(1.05)"; e.currentTarget.style.background = "rgba(255, 255, 255, 0.2)"; }} onMouseOut={e => { e.currentTarget.style.transform = "scale(1)"; e.currentTarget.style.background = "rgba(255, 255, 255, 0.12)"; }}>
         {!is_paused ? (
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M6 4h4v16H6zm8 0h4v16h-4z" />
           </svg>
         ) : (
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" style={{ marginLeft: "2px" }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style={{ marginLeft: "2px" }}>
             <path d="M8 5v14l11-7z" />
           </svg>
         )}
       </button>
+
+      <input
+        className="volumeSlider"
+        type="range"
+        min="0" max="1" step="0.01"
+        value={volume}
+        onChange={(e) => {
+          const v = Number(e.target.value);
+          setVolume(v);
+          if (player) {
+            player.setVolume(v).catch(err => console.error("Volume tweak failed", err));
+          }
+        }}
+        style={{ marginLeft: "14px" }}
+      />
 
       <span className="trackName" style={{ marginLeft: "14px", fontWeight: "bold" }}>
         {current_track ? `${current_track.name} — ${current_track.artists[0].name}` : "Open Spotify on your phone & select this device"}
