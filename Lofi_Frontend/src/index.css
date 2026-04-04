@@ -876,37 +876,41 @@ body {
 @media (max-width: 768px) {
   /* 1. Fix Layout Padding */
   .homePage {
-    padding: 0 16px !important;
+    padding: 0 10px !important;
   }
   
   .homeLayout {
     width: 100% !important;
-    margin-top: 50px; /* Leave breathing room for smaller navbars */
+    margin-top: 60px; /* Leave more breathing room underneath navbar */
   }
 
   /* 2. Fix the timer sizing */
   .timerValue {
-    font-size: 5.5rem !important;
+    font-size: 4.8rem !important; /* Smaller to fit gracefully */
   }
   
   /* 3. Compress Navbar & Floating Buttons to avoid overlapping */
   .navbar {
-    top: 8px !important;
-    gap: 8px !important;
-    padding: 6px 12px !important;
+    top: 10px !important;
+    left: 10px !important;
+    transform: none !important;
+    gap: 4px !important;
+    padding: 4px 6px !important;
+    width: fit-content;
   }
   .navbar a, .navbar button {
-    font-size: 13px !important;
+    font-size: 11px !important;
     padding: 6px 8px !important;
   }
   
   /* 4. Spotify Button Resizing */
   button[onclick^="redirectToAuthCodeFlow"], 
   button[onclick^="handleLogout"] {
-    top: 8px !important;
-    right: 8px !important;
-    padding: 6px 10px !important;
+    top: 10px !important;
+    right: 10px !important;
+    padding: 6px 8px !important;
     font-size: 11px !important;
+    white-space: nowrap;
   }
   
   /* 5. Music Player Bar Scaling */
@@ -915,9 +919,10 @@ body {
     left: 2vw !important;
     transform: none !important;
     bottom: 12px !important;
-    padding: 8px 14px !important;
+    padding: 8px 10px !important;
     flex-wrap: nowrap;
     gap: 8px;
+    font-size: 11px;
   }
   
   /* 6. Study Room Fixes */
@@ -925,23 +930,32 @@ body {
     grid-template-columns: 1fr !important;
   }
   
-  /* 7. Modal Fixes */
+  /* 7. Modal Fixes for Keyboard Popup */
   .notesModal {
     width: 96vw !important;
-    height: 85vh !important;
+    height: 60vh !important; /* Shorter so it stays visible when keyboard opens */
+    max-height: 60vh !important;
     margin: auto;
+    position: absolute;
+    top: 10%;
+    left: 2vw;
   }
   .notesGrid {
     grid-template-columns: 1fr !important; /* Stack vertically */
     overflow-y: auto;
   }
   .notesList {
-    height: 180px !important;
+    height: 120px !important;
     border-right: none !important;
     border-bottom: 1px solid rgba(255,255,255,0.06);
   }
   .notesHeaderActions {
     flex-wrap: wrap;
     justify-content: flex-end;
+  }
+  /* Smaller buttons in notes modal for mobile */
+  .notesBtn {
+    padding: 4px 8px !important;
+    font-size: 11px !important;
   }
 }
