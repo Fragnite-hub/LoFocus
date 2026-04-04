@@ -68,9 +68,8 @@ export default function PlayerManager({ playlist }) {
   };
 
   const handleLogout = () => {
-    setToken(null);
-    setUser(null);
     localStorage.removeItem("spotifyToken");
+    window.location.reload();
   };
 
   return (
