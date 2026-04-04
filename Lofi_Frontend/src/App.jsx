@@ -10,7 +10,7 @@ import { useSettings } from "./hooks/useSettings";
 
 export default function App() {
   const settings = useSettings();
-  const [hasEntered, setHasEntered] = useState(false);
+  const [hasEntered, setHasEntered] = useState(() => sessionStorage.getItem("hasEntered") === "true");
   const [isNotesOpen, setIsNotesOpen] = useState(false);
   const [creatorExpanded, setCreatorExpanded] = useState(() => localStorage.getItem("creatorExpanded") !== "false");
   const playlist = [
@@ -52,7 +52,7 @@ export default function App() {
       />
 
       {/* 🔹 Entry Overlay blocks audio init and collects the gesture */}
-      {!hasEntered && <EntryScreen onEnter={() => setHasEntered(true)} />}
+      {!hasEntered && <EntryScreen onEnter={() => { setHasEntered(true); sessionStorage.setItem("hasEntered", "true"); }} />}
 
       {/* 🔹 Foreground content */}
       <div style={{ opacity: hasEntered ? 1 : 0, transition: "opacity 0.6s ease" }}>
