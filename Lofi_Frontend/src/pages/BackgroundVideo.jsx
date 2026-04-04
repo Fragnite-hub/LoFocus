@@ -26,8 +26,13 @@ export default function BackgroundVideo({ src }) {
 
       {/* Elegant Spinner overlaid while loading */}
       {isLoading && (
-        <div style={{ position: "fixed", inset: 0, display: "grid", placeItems: "center", zIndex: 0, background: "black" }}>
-           <div className="videoSpinner"></div>
+        <div style={{ position: "fixed", inset: 0, zIndex: 0, background: "black" }}>
+           <div style={{ position: "absolute", bottom: "120px", left: "50%", transform: "translateX(-50%)" }}>
+             <div className="premiumLoader">
+               <div className="premiumLoaderText">Tuning environment</div>
+               <div className="premiumLoaderBar"></div>
+             </div>
+           </div>
         </div>
       )}
     </>
