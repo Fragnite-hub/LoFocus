@@ -54,4 +54,4 @@ cd Lofi_Backend
 ## 🎨 Design Philosophy
 *This project strictly avoids heavily bloated UI libraries (like Tailwind or Material UI) in favor of raw semantic CSS. The result is a mathematically rigid, flawlessly optimized single-page application that renders glassmorphic `backdrop-filters` natively without any JS rendering lag.*
 
-Built independently by **Prayag Mishra**. Let's connect on [LinkedIn](https://linkedin.com/in/prayag23).
+Built independently by **Prayag Mishra**, with architectural and engineering co-authorship provided by **Claude (LLM)**. Let's connect on [LinkedIn](https://linkedin.com/in/prayag23).
