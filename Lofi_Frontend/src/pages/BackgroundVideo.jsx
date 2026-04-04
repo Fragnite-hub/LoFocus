@@ -17,7 +17,8 @@ export default function BackgroundVideo({ src }) {
         muted 
         playsInline
         className="bgVideo"
-        onCanPlay={() => setIsLoading(false)}
+        onWaiting={() => setIsLoading(true)}
+        onPlaying={() => setIsLoading(false)}
         style={{ opacity: isLoading ? 0 : 1, transition: "opacity 0.8s ease" }}
       >
         <source src={src} type="video/mp4" />
@@ -25,7 +26,7 @@ export default function BackgroundVideo({ src }) {
 
       {/* Elegant Spinner overlaid while loading */}
       {isLoading && (
-        <div style={{ position: "fixed", inset: 0, display: "grid", placeItems: "center", zIndex: -2, background: "black" }}>
+        <div style={{ position: "fixed", inset: 0, display: "grid", placeItems: "center", zIndex: 0, background: "black" }}>
            <div className="videoSpinner"></div>
         </div>
       )}
