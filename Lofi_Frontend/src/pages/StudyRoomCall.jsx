@@ -338,10 +338,10 @@ export default function StudyRoomCall() {
   const [screenOn, setScreenOn] = useState(false);
 
   const username = useMemo(() => {
-    let u = localStorage.getItem("study_username");
+    let u = sessionStorage.getItem("study_username");
     if (!u) {
       u = "user_" + Math.random().toString(36).slice(2, 7);
-      localStorage.setItem("study_username", u);
+      sessionStorage.setItem("study_username", u);
     }
     return u;
   }, []);
