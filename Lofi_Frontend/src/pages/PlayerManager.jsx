@@ -54,23 +54,14 @@ export default function PlayerManager({ playlist }) {
       headers: { Authorization: `Bearer ${accessToken}` },
     })
       .then((res) => {
-        if (!res.ok) {
-           if (res.status === 403) throw new Error("403_FORBIDDEN");
-           throw new Error("Invalid token");
-        }
+        if (!res.ok) throw new Error("Invalid token");
         return res.json();
       })
       .then((data) => {
         setUser(data);
         setIsPremium(data.product === "premium");
       })
-      .catch((err) => {
-        if (err.message === "403_FORBIDDEN") {
-           // Graceful fallback for Spotify Development Mode whitelisting errors
-           setUser({ display_name: "Lofi Listener" });
-           setIsPremium(false);
-           return;
-        }
+      .catch(() => {
         setToken(null);
         localStorage.removeItem("spotifyToken");
       });
