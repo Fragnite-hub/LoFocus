@@ -38,4 +38,17 @@ public class StudyController {
         public String code;
         public String user;
     }
+
+    @MessageMapping("/leave")
+    @SendTo("/topic/room-left")
+    public StudyRoom leaveRoom(JoinRequest req) {
+        StudyRoom room = rooms.get(req.code);
+        if (room != null) {
+            room.users.remove(req.user);
+            if (room.users.isEmpty()) {
+                rooms.remove(req.code);
+            }
+        }
+        return room;
+    }
 }

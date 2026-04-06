@@ -337,8 +337,14 @@ export default function StudyRoomCall() {
   const [camOn, setCamOn] = useState(true);
   const [screenOn, setScreenOn] = useState(false);
 
-  const username = useMemo(() => "user_" + Math.random().toString(36).slice(2, 7), []);
-
+  const username = useMemo(() => {
+    let u = localStorage.getItem("study_username");
+    if (!u) {
+      u = "user_" + Math.random().toString(36).slice(2, 7);
+      localStorage.setItem("study_username", u);
+    }
+    return u;
+  }, []);
   const clientRef = useRef(null);
   const pendingActionRef = useRef(null); // queued action to fire once connected
   const pcRef = useRef(null);
@@ -386,6 +392,17 @@ export default function StudyRoomCall() {
             if (normalizeUsers(r?.users).includes(username)) {
               setRoom(r);
               currentRoomCodeRef.current = r.code;
+            }
+          } catch {}
+        });
+        stomp.subscribe("/topic/room-left", (msg) => {
+          try {
+            const r = JSON.parse(msg.body);
+            if (normalizeUsers(r?.users).includes(username)) {
+              setRoom(r);
+              currentRoomCodeRef.current = r.code;
+            } else if (r.code === currentRoomCodeRef.current) {
+              setRoom(null);
             }
           } catch {}
         });
@@ -502,7 +519,16 @@ export default function StudyRoomCall() {
     const users = normalizeUsers(room.users);
     if (!users.includes(username)) return;
 
-    if (users.length < 2) { setPhase("waiting"); return; }
+    if (users.length < 2) { 
+      setPhase("waiting"); 
+      if (pcRef.current) {
+        pcRef.current.close();
+        pcRef.current = null;
+        remoteStreamRef.current = new MediaStream();
+        if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
+      }
+      return; 
+    }
 
     setPhase("call");
     const makeOffer = [...users].sort()[0] === username;
@@ -572,6 +598,12 @@ export default function StudyRoomCall() {
   };
 
   const stopCall = () => {
+    if (room && clientRef.current?.connected) {
+      clientRef.current.publish({
+        destination: "/app/leave",
+        body: JSON.stringify({ code: room.code, user: username })
+      });
+    }
     try { pcRef.current?.close(); } catch {}
     pcRef.current = null;
     localStreamRef.current?.getTracks().forEach((t) => t.stop());

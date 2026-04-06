@@ -8,16 +8,16 @@ export default function MusicPlayer({ playlist }) {
   const [playError, setPlayError] = useState("");
 
   // Auto-play immediately when the component mounts over the unlocked DOM
-  useEffect(() => {
-    const el = audioRef.current;
-    if (el) {
-      el.volume = Number(volume);
-      el.play().catch(e => {
-        setPlaying(false);
-        setPlayError("Tap play (browser blocked background autoplay).");
-      });
-    }
-  }, []);
+  // useEffect(() => {
+  //   const el = audioRef.current;
+  //   if (el) {
+  //     el.volume = Number(volume);
+  //     el.play().catch(e => {
+  //       setPlaying(false);
+  //       setPlayError("Tap play (browser blocked background autoplay).");
+  //     });
+  //   }
+  // }, []);
 
   const togglePlay = async () => {
     const el = audioRef.current;

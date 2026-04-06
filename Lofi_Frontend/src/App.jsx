@@ -66,7 +66,7 @@ export default function App() {
 
         {/* 🔹 Collapsible Creator Drawer */}
         {hasEntered && (
-          <div style={{ 
+          <div className="creatorDrawer" style={{ 
             position: "fixed", 
             bottom: "16px", 
             left: "24px", 

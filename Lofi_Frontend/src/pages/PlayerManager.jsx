@@ -128,7 +128,7 @@ export default function PlayerManager({ playlist }) {
         </>
       ) : (
         <>
-          <SpotifyPlayer token={token} isPremium={isPremium} />
+          <SpotifyPlayer token={token} isPremium={isPremium} playlist={playlist} />
           <button
             onClick={() => {
               handleLogout();
