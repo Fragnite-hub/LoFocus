@@ -2,10 +2,66 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/png" href="/logo/logo.png" />
+
+    <!-- ── Viewport ─────────────────────────────────────────────────── -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>lofitodo</title>
+
+    <!-- ── Favicons ──────────────────────────────────────────────────── -->
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="icon" type="image/png" sizes="64x64" href="/favicon.png" />
+    <link rel="apple-touch-icon" href="/logo/logo_optimized.png" />
+
+    <!-- ── Primary SEO ───────────────────────────────────────────────── -->
+    <title>LoFocus — Lofi Music & Focus Timer for Deep Work</title>
+    <meta name="description" content="LoFocus is a free lofi music player and focus timer. Stream lofi beats, run Pomodoro sessions, and join virtual study rooms — all in a beautiful, distraction-free space." />
+    <meta name="keywords" content="lofi music, focus timer, study room, pomodoro, lofi study app, ambient music, deep work, study with me, lofi beats, productivity app" />
+    <meta name="author" content="LoFocus" />
+    <meta name="theme-color" content="#1a1a2e" />
+    <link rel="canonical" href="https://lofocus.space/" />
+
+    <!-- ── Open Graph (Facebook, Discord, iMessage, LinkedIn) ────────── -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://lofocus.space/" />
+    <meta property="og:title" content="LoFocus — Lofi Music & Focus Timer for Deep Work" />
+    <meta property="og:description" content="Stream lofi beats, run Pomodoro sessions, and join virtual study rooms — all in a beautiful, distraction-free space. Free forever." />
+    <meta property="og:image" content="https://lofocus.space/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="LoFocus — Lofi Music and Focus Timer" />
+    <meta property="og:site_name" content="LoFocus" />
+    <meta property="og:locale" content="en_US" />
+
+    <!-- ── Twitter / X Card ──────────────────────────────────────────── -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content="https://lofocus.space/" />
+    <meta name="twitter:title" content="LoFocus — Lofi Music & Focus Timer for Deep Work" />
+    <meta name="twitter:description" content="Stream lofi beats, run Pomodoro sessions, and join virtual study rooms — all in a beautiful, distraction-free space." />
+    <meta name="twitter:image" content="https://lofocus.space/og-image.png" />
+
+    <!-- ── JSON-LD Structured Data ───────────────────────────────────── -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "LoFocus",
+      "url": "https://lofocus.space",
+      "description": "A free lofi music player and focus timer with virtual study rooms.",
+      "applicationCategory": "ProductivityApplication",
+      "operatingSystem": "Web",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      },
+      "author": {
+        "@type": "Person",
+        "name": "Prayag Mishra"
+      },
+      "keywords": "lofi music, focus timer, study room, pomodoro, productivity"
+    }
+    </script>
   </head>
+
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>

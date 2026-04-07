@@ -5,7 +5,7 @@ import { redirectToAuthCodeFlow, getAccessToken } from "../spotify";
 import { useNavigate } from "react-router-dom";
 import { showToast } from "../toast";
 
-export default function PlayerManager({ playlist }) {
+export default function PlayerManager({ playlist, hideOverlays }) {
   const [token, setToken] = useState(null);
   const [user, setUser] = useState(null);
   const [isPremium, setIsPremium] = useState(false);
@@ -67,6 +67,10 @@ export default function PlayerManager({ playlist }) {
       });
   };
 
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
+  const [modalState, setModalState] = useState("ask"); // "ask" | "free"
+  const [spotifyExpanded, setSpotifyExpanded] = useState(() => sessionStorage.getItem("spotifyExpanded") !== "false");
+
   const handleLogout = () => {
     localStorage.removeItem("spotifyToken");
     window.location.reload();
@@ -77,53 +81,184 @@ export default function PlayerManager({ playlist }) {
       {!token ? (
         <>
           <MusicPlayer playlist={playlist} />
-          {import.meta.env.VITE_SPOTIFY_CLIENT_ID === "PLACE_YOUR_CLIENT_ID_HERE" || !import.meta.env.VITE_SPOTIFY_CLIENT_ID ? (
-            <button
-              onClick={() => showToast("Please add your Client ID into your .env file!", "error")}
-              style={{
-                position: "fixed",
-                top: "14px",
-                right: "18px",
-                background: "#555",
-                color: "white",
-                padding: "8px 14px",
-                borderRadius: "20px",
-                border: "none",
-                fontSize: "13px",
-                fontWeight: "bold",
-                cursor: "pointer",
-                zIndex: 100,
+          
+          {!hideOverlays && (
+          <div className="spotifyDrawer spotifyDrawerBox" style={{
+            position: "fixed",
+            top: "14px",
+            right: "18px",
+            zIndex: 100,
+            display: "flex",
+            flexDirection: "row-reverse", // expand leftwards
+            alignItems: "center",
+            gap: spotifyExpanded ? "10px" : "0px",
+            background: spotifyExpanded ? "#1DB954" : "rgba(0,0,0,0.55)",
+            padding: spotifyExpanded ? "8px 14px 8px 8px" : "0px",
+            borderRadius: "20px",
+            border: spotifyExpanded ? "none" : "1px solid rgba(255,255,255,0.08)",
+            backdropFilter: spotifyExpanded ? "none" : "blur(8px)",
+            boxShadow: spotifyExpanded ? "0 4px 10px rgba(29, 185, 84, 0.4)" : "none",
+            transition: "all 0.35s cubic-bezier(0.2, 0.8, 0.2, 1)",
+          }}>
+            <button 
+              onClick={() => { 
+                const next = !spotifyExpanded;
+                setSpotifyExpanded(next); 
+                localStorage.setItem("spotifyExpanded", String(next)); 
               }}
-            >
-              Missing Client ID ⚠️
-            </button>
-          ) : (
-            <button
-              onClick={() => redirectToAuthCodeFlow()}
-              style={{
-                position: "fixed",
-                top: "14px",
-                right: "18px",
-                background: "#1DB954",
-                color: "white",
-                padding: "8px 14px",
-                borderRadius: "20px",
-                border: "none",
-                fontSize: "13px",
-                fontWeight: "bold",
-                cursor: "pointer",
-                boxShadow: "0 4px 10px rgba(29, 185, 84, 0.4)",
-                zIndex: 100,
+              style={{ 
+                background: spotifyExpanded ? "transparent" : "rgba(0,0,0,0.3)", 
+                border: spotifyExpanded ? "none" : "1px solid rgba(255,255,255,0.06)",
+                color: spotifyExpanded ? "rgba(255,255,255,0.8)" : "rgba(255,255,255,0.3)", 
+                cursor: "pointer", 
+                fontSize: "12px", 
+                width: spotifyExpanded ? "22px" : "32px",
+                height: spotifyExpanded ? "22px" : "32px",
+                borderRadius: "50%",
                 display: "flex",
                 alignItems: "center",
-                gap: "6px"
+                justifyContent: "center",
+                transition: "all 0.2s ease" 
               }}
+              onMouseOver={e => !spotifyExpanded && (e.currentTarget.style.color = "rgba(255,255,255,0.8)")}
+              onMouseOut={e => !spotifyExpanded && (e.currentTarget.style.color = "rgba(255,255,255,0.3)")}
+              title={spotifyExpanded ? "Collapse" : "Connect Spotify"}
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.6 0 12 0zm5.5 17.3c-.2.3-.6.5-1 .3-2.6-1.6-6-2-8.5-1.1-.4.2-.8-.1-1-.5s.1-.8.5-1c3-1 6.8-.5 9.7 1.3.4.2.5.6.3 1zm1.5-3.3c-.3.4-.8.5-1.2.3-3-1.9-7.6-2.5-10.4-1.4-.5.2-1-.1-1.2-.6-.2-.5.1-1 .6-1.2 3.3-1.3 8.3-.6 11.7 1.6.4.3.6.8.5 1.3zm.1-3.6C15.6 8.3 11 8.1 7.8 9.1c-.6.2-1.3-.1-1.5-.7-.2-.6.1-1.3.7-1.5 3.8-1.2 9-.9 13.1 1.5.6.3.8 1 .5 1.6-.3.5-1 .8-1.5.4z" />
-              </svg>
-              Connect Spotify
+              {spotifyExpanded ? "❯" : "❮"}
             </button>
+
+            <div style={{
+              width: spotifyExpanded ? "135px" : "0px",
+              overflow: "hidden",
+              transition: "width 0.35s cubic-bezier(0.2, 0.8, 0.2, 1)",
+              whiteSpace: "nowrap",
+              display: "flex",
+              alignItems: "center",
+              flexDirection: "row-reverse"
+            }}>
+              {import.meta.env.VITE_SPOTIFY_CLIENT_ID === "PLACE_YOUR_CLIENT_ID_HERE" || !import.meta.env.VITE_SPOTIFY_CLIENT_ID ? (
+                <button
+                  onClick={() => showToast("Please add your Client ID into your .env file!", "error")}
+                  style={{
+                    background: "transparent",
+                    color: "white",
+                    padding: "0",
+                    border: "none",
+                    fontSize: "13px",
+                    fontWeight: "bold",
+                    cursor: "pointer",
+                  }}
+                >
+                  Missing ID ⚠️
+                </button>
+              ) : (
+                <button
+                  onClick={() => setShowPremiumModal(true)}
+                  style={{
+                    background: "transparent",
+                    color: "white",
+                    padding: "0",
+                    border: "none",
+                    fontSize: "13px",
+                    fontWeight: "bold",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "6px"
+                  }}
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.6 0 12 0zm5.5 17.3c-.2.3-.6.5-1 .3-2.6-1.6-6-2-8.5-1.1-.4.2-.8-.1-1-.5s.1-.8.5-1c3-1 6.8-.5 9.7 1.3.4.2.5.6.3 1zm1.5-3.3c-.3.4-.8.5-1.2.3-3-1.9-7.6-2.5-10.4-1.4-.5.2-1-.1-1.2-.6-.2-.5.1-1 .6-1.2 3.3-1.3 8.3-.6 11.7 1.6.4.3.6.8.5 1.3zm.1-3.6C15.6 8.3 11 8.1 7.8 9.1c-.6.2-1.3-.1-1.5-.7-.2-.6.1-1.3.7-1.5 3.8-1.2 9-.9 13.1 1.5.6.3.8 1 .5 1.6-.3.5-1 .8-1.5.4z" />
+                  </svg>
+                  Connect Spotify
+                </button>
+              )}
+            </div>
+          </div>
+          )}
+
+          {showPremiumModal && (
+            <div style={{
+              position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
+              background: "rgba(3, 4, 15, 0.75)",
+              backdropFilter: "blur(12px)",
+              zIndex: 9999,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              animation: "fadeIn 0.2s ease"
+            }}>
+              <div style={{
+                background: "linear-gradient(150deg, #121429 0%, #080914 100%)",
+                border: "1px solid rgba(29, 185, 84, 0.3)",
+                borderRadius: "24px",
+                padding: "36px 32px",
+                width: "420px",
+                maxWidth: "92vw",
+                boxShadow: "0 24px 60px rgba(0,0,0,0.6), 0 0 40px rgba(29, 185, 84, 0.15)",
+                color: "white",
+                position: "relative",
+                fontFamily: "'Outfit', sans-serif"
+              }}>
+                <button onClick={() => { setShowPremiumModal(false); setModalState("ask"); }} style={{
+                  position: "absolute", top: "16px", right: "20px",
+                  background: "transparent", border: "none", color: "rgba(255,255,255,0.4)",
+                  fontSize: "18px", cursor: "pointer"
+                }}>✕</button>
+
+                {modalState === "ask" ? (
+                  <>
+                     <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "16px" }}>
+                       <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#1DB954", boxShadow: "0 0 10px #1DB954" }}></div>
+                       <h2 style={{ margin: 0, fontSize: "20px", fontWeight: "700", color: "#fff", letterSpacing: "0.5px" }}>Spotify Connect</h2>
+                     </div>
+                     <p style={{ fontSize: "14px", color: "rgba(255,255,255,0.6)", lineHeight: "1.6", marginBottom: "32px", fontFamily: "'JetBrains Mono', monospace" }}>
+                       To sync your music and control playback seamlessly on this dashboard, Spotify strictly requires an active <strong>Premium Account</strong>. Free accounts block external web players.
+                     </p>
+                     
+                     <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                       <button onClick={() => redirectToAuthCodeFlow()} style={{
+                         width: "100%", padding: "14px", borderRadius: "12px", border: "none",
+                         background: "#1DB954", color: "white", fontSize: "14px", fontWeight: "700",
+                         cursor: "pointer", transition: "all 0.2s ease"
+                       }} onMouseOver={e => e.currentTarget.style.transform = "scale(1.02)"} onMouseOut={e => e.currentTarget.style.transform = "scale(1)"}>
+                         Yes, I have Spotify Premium
+                       </button>
+                       <button onClick={() => setModalState("free")} style={{
+                         width: "100%", padding: "14px", borderRadius: "12px", border: "1px solid rgba(255,255,255,0.1)",
+                         background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.8)", fontSize: "14px", fontWeight: "600",
+                         cursor: "pointer", transition: "all 0.2s ease"
+                       }} onMouseOver={e => e.currentTarget.style.background = "rgba(255,255,255,0.08)"} onMouseOut={e => e.currentTarget.style.background = "rgba(255,255,255,0.05)"}>
+                         I am on the Free Tier
+                       </button>
+                     </div>
+                  </>
+                ) : (
+                  <>
+                     <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "16px" }}>
+                       <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#6366f1", boxShadow: "0 0 10px #6366f1" }}></div>
+                       <h2 style={{ margin: 0, fontSize: "20px", fontWeight: "700", color: "#fff", letterSpacing: "0.5px" }}>You're all set!</h2>
+                     </div>
+                     <p style={{ fontSize: "14px", color: "rgba(255,255,255,0.6)", lineHeight: "1.6", marginBottom: "12px", fontFamily: "'JetBrains Mono', monospace" }}>
+                       Spotify completely blocks third-party apps from streaming music for free users (to ensure you hear their native ads). 
+                     </p>
+                     <p style={{ fontSize: "14px", color: "rgba(255,255,255,0.7)", lineHeight: "1.6", marginBottom: "32px", fontWeight: "bold" }}>
+                       But don't worry! We've deeply integrated an absolutely incredible, hand-curated Lofi mix straight into your dashboard. Just hit Play at the bottom of the screen and enjoy the vibes.
+                     </p>
+                     <button onClick={() => { 
+                         setSpotifyExpanded(false);
+                         sessionStorage.setItem("spotifyExpanded", "false");
+                         setShowPremiumModal(false); 
+                         setModalState("ask");
+                     }} style={{
+                         width: "100%", padding: "14px", borderRadius: "12px", border: "none",
+                         background: "linear-gradient(135deg, #4f46e5, #6366f1)", color: "white", fontSize: "14px", fontWeight: "700",
+                         cursor: "pointer", transition: "all 0.2s ease"
+                       }} onMouseOver={e => e.currentTarget.style.transform = "scale(1.02)"} onMouseOut={e => e.currentTarget.style.transform = "scale(1)"}>
+                         Got it, let's focus! ✦
+                     </button>
+                  </>
+                )}
+              </div>
+            </div>
           )}
         </>
       ) : (
@@ -134,10 +269,8 @@ export default function PlayerManager({ playlist }) {
               handleLogout();
               showToast("Securely disconnected from Spotify.", "success");
             }}
+            className="spotifyLogoutBtn"
             style={{
-              position: "fixed",
-              top: "14px",
-              right: "18px",
               background: "rgba(0,0,0,0.6)",
               color: "white",
               padding: "8px 14px",

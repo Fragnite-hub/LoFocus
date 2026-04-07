@@ -1,18 +1,24 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 
 export default function SpotifyPremiumPlayer({ token }) {
   const [player, setPlayer] = useState(null);
   const [is_paused, setPaused] = useState(false);
-  const [is_active, setActive] = useState(false);
   const [current_track, setTrack] = useState(null);
   const [volume, setVolume] = useState(0.5);
+  const [deviceId, setDeviceId] = useState(null);
+  const sdkInjected = useRef(false);
 
   useEffect(() => {
-    const script = document.createElement("script");
-    script.src = "https://sdk.scdn.co/spotify-player.js";
-    script.async = true;
+    if (sdkInjected.current) return;
+    sdkInjected.current = true;
 
-    document.body.appendChild(script);
+    if (!document.getElementById("spotify-player-script")) {
+      const script = document.createElement("script");
+      script.id = "spotify-player-script";
+      script.src = "https://sdk.scdn.co/spotify-player.js";
+      script.async = true;
+      document.body.appendChild(script);
+    }
 
     window.onSpotifyWebPlaybackSDKReady = () => {
       const player = new window.Spotify.Player({
@@ -25,6 +31,7 @@ export default function SpotifyPremiumPlayer({ token }) {
 
       player.addListener("ready", ({ device_id }) => {
         console.log("Ready with Device ID", device_id);
+        setDeviceId(device_id);
         fetch("https://api.spotify.com/v1/me/player", {
           method: "PUT",
           headers: {
@@ -46,7 +53,6 @@ export default function SpotifyPremiumPlayer({ token }) {
         if (!state) return;
         setTrack(state.track_window.current_track);
         setPaused(state.paused);
-        player.getCurrentState().then(state => { setActive(!!state); });
       });
 
       player.connect();
@@ -59,10 +65,45 @@ export default function SpotifyPremiumPlayer({ token }) {
     };
   }, [token]);
 
+  const handlePlayPause = async () => {
+    if (!player) return;
+
+    try {
+        await player.activateElement();
+    } catch (e) {
+        console.warn("Could not activate audio element", e);
+    }
+
+    player._options.getOAuthToken(access_token => {
+      if (!current_track) {
+        fetch("https://api.spotify.com/v1/me/player/play", {
+          method: "PUT",
+          headers: {
+            "Authorization": `Bearer ${access_token}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            context_uri: "spotify:playlist:37i9dQZF1DWWQRwui0ExPn"
+          })
+        }).catch(err => console.error("Force play failed", err));
+      } else {
+        const endpoint = is_paused ? "play" : "pause";
+        const url = deviceId 
+          ? `https://api.spotify.com/v1/me/player/${endpoint}?device_id=${deviceId}`
+          : `https://api.spotify.com/v1/me/player/${endpoint}`;
+
+        fetch(url, {
+          method: "PUT",
+          headers: { "Authorization": `Bearer ${access_token}` }
+        }).catch(e => console.error(`Failed to ${endpoint}:`, e));
+      }
+    });
+  };
+
   return (
     <div className="musicBar" style={{ "--vol": Number(volume) }}>
-      <button onClick={() => player?.togglePlay()} style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "36px", height: "36px", borderRadius: "50%", background: "rgba(255, 255, 255, 0.12)", color: "white", border: "1px solid rgba(255, 255, 255, 0.2)", cursor: "pointer", transition: "all 0.15s ease" }} onMouseOver={e => { e.currentTarget.style.transform = "scale(1.05)"; e.currentTarget.style.background = "rgba(255, 255, 255, 0.2)"; }} onMouseOut={e => { e.currentTarget.style.transform = "scale(1)"; e.currentTarget.style.background = "rgba(255, 255, 255, 0.12)"; }}>
-        {!is_paused ? (
+      <button onClick={handlePlayPause} style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "36px", height: "36px", borderRadius: "50%", background: "rgba(255, 255, 255, 0.12)", color: "white", border: "1px solid rgba(255, 255, 255, 0.2)", cursor: "pointer", transition: "all 0.15s ease" }} onMouseOver={e => { e.currentTarget.style.transform = "scale(1.05)"; e.currentTarget.style.background = "rgba(255, 255, 255, 0.2)"; }} onMouseOut={e => { e.currentTarget.style.transform = "scale(1)"; e.currentTarget.style.background = "rgba(255, 255, 255, 0.12)"; }}>
+        {!is_paused && current_track ? (
           <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
             <path d="M6 4h4v16H6zm8 0h4v16h-4z" />
           </svg>

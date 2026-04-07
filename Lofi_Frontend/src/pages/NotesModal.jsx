@@ -24,6 +24,7 @@ export default function NotesModal({ isOpen, onClose, onTodosChanged }) {
   const [draftTitle, setDraftTitle] = useState("");
   const [draftContent, setDraftContent] = useState("");
   const [isNew, setIsNew] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
 
   const textareaRef = useRef(null);
 
@@ -146,9 +147,11 @@ export default function NotesModal({ isOpen, onClose, onTodosChanged }) {
 
   async function onDelete() {
     if (!selectedId || saving) return;
-    const ok = window.confirm("Delete this note?");
-    if (!ok) return;
+    setDeleteConfirm(true);
+  }
 
+  async function confirmDelete() {
+    setDeleteConfirm(false);
     setSaving(true);
     setError("");
     try {
@@ -286,6 +289,45 @@ export default function NotesModal({ isOpen, onClose, onTodosChanged }) {
             ) : null}
           </div>
         </div>
+
+        {/* Custom delete confirmation overlay */}
+        {deleteConfirm && (
+          <div style={{
+            position: "absolute", inset: 0,
+            background: "rgba(3,7,18,0.88)",
+            borderRadius: "18px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 10
+          }}>
+            <div style={{
+              background: "linear-gradient(150deg, #121429 0%, #080914 100%)",
+              border: "1px solid rgba(239,68,68,0.3)",
+              borderRadius: "20px",
+              padding: "32px 28px",
+              maxWidth: "300px",
+              width: "90%",
+              textAlign: "center",
+              color: "white",
+              boxShadow: "0 24px 60px rgba(0,0,0,0.6)"
+            }}>
+              <div style={{ fontSize: "32px", marginBottom: "12px" }}>🗑️</div>
+              <h3 style={{ margin: "0 0 8px 0", fontSize: "17px", fontWeight: 700 }}>Delete this note?</h3>
+              <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.55)", marginBottom: "24px", lineHeight: 1.5 }}>This action cannot be undone.</p>
+              <div style={{ display: "flex", gap: "12px", justifyContent: "center" }}>
+                <button
+                  onClick={() => setDeleteConfirm(false)}
+                  style={{ padding: "10px 22px", borderRadius: "12px", background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)", color: "white", cursor: "pointer", fontSize: "13px", fontWeight: 600 }}
+                >Cancel</button>
+                <button
+                  onClick={confirmDelete}
+                  style={{ padding: "10px 22px", borderRadius: "12px", background: "rgba(239,68,68,0.85)", border: "none", color: "white", cursor: "pointer", fontSize: "13px", fontWeight: 700 }}
+                >Delete</button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

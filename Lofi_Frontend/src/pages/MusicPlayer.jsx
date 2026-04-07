@@ -87,7 +87,16 @@ export default function MusicPlayer({ playlist }) {
         />
 
         <span className="trackName">
-          Chillhop — relaxing beats 🎧
+          {(() => {
+             const vibes = [
+               "Deep Focus Room 🌧", 
+               "Lofi Studying 🎧", 
+               "Late Night Coding 💻", 
+               "Flow State ✨", 
+               "Zen & Chill 🍵"
+             ];
+             return vibes[index % vibes.length];
+          })()}
         </span>
       </div>
 
