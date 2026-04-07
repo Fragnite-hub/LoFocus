@@ -360,6 +360,27 @@ export default function StudyRoomCall() {
   const currentRoomCodeRef = useRef("");
   const navigate = useNavigate();
 
+  // ── Cleanup on unmount (navigating away without pressing Leave) ────────────
+  useEffect(() => {
+    return () => {
+      // Stop all media tracks so the camera/mic indicator turns off immediately
+      localStreamRef.current?.getTracks().forEach((t) => t.stop());
+      screenStreamRef.current?.getTracks().forEach((t) => t.stop());
+      localStreamRef.current = null;
+      screenStreamRef.current = null;
+      // Close peer connection
+      try { pcRef.current?.close(); } catch {}
+      pcRef.current = null;
+      // Notify backend we left (best-effort)
+      if (currentRoomCodeRef.current && clientRef.current?.connected) {
+        clientRef.current.publish({
+          destination: "/app/leave",
+          body: JSON.stringify({ code: currentRoomCodeRef.current, user: sessionStorage.getItem("study_username") }),
+        });
+      }
+    };
+  }, []);
+
   // ── STOMP connect ──────────────────────────────────────────────────────────
   useEffect(() => {
     // Prefer native websocket STOMP endpoint (more reliable than SockJS on your machine).
