@@ -2,22 +2,25 @@ import { useRef, useState, useEffect } from "react";
 
 export default function MusicPlayer({ playlist }) {
   const audioRef = useRef(null);
-  const [playing, setPlaying] = useState(true);
+  const [playing, setPlaying] = useState(false);
   const [volume, setVolume] = useState(0.5);
   const [index, setIndex] = useState(() => Math.floor(Math.random() * playlist.length));
   const [playError, setPlayError] = useState("");
 
-  // Auto-play immediately when the component mounts over the unlocked DOM
-  // useEffect(() => {
-  //   const el = audioRef.current;
-  //   if (el) {
-  //     el.volume = Number(volume);
-  //     el.play().catch(e => {
-  //       setPlaying(false);
-  //       setPlayError("Tap play (browser blocked background autoplay).");
-  //     });
-  //   }
-  // }, []);
+  // Auto-play on mount — the EntryScreen already captured a user gesture so
+  // most browsers will allow this. If still blocked, the play button works fine.
+  useEffect(() => {
+    const el = audioRef.current;
+    if (!el) return;
+    el.volume = Number(volume);
+    el.play()
+      .then(() => setPlaying(true))
+      .catch(() => {
+        // Browser blocked autoplay — user can still press Play manually
+        setPlaying(false);
+      });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const togglePlay = async () => {
     const el = audioRef.current;
@@ -43,7 +46,6 @@ export default function MusicPlayer({ playlist }) {
       <audio
         ref={audioRef}
         src={playlist[index]}
-        autoPlay={playing}
         onEnded={() => {
           let nextIdx;
           if (playlist.length > 1) {
@@ -54,8 +56,10 @@ export default function MusicPlayer({ playlist }) {
             nextIdx = 0;
           }
           setIndex(nextIdx);
+          // Keep playing when track ends
+          setTimeout(() => audioRef.current?.play().then(() => setPlaying(true)).catch(() => {}), 50);
         }}
-        preload="metadata"
+        preload="auto"
       />
 
       <div
