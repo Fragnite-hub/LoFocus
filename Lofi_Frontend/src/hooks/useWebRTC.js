@@ -7,6 +7,9 @@ const API_BASE = import.meta.env.VITE_API_BASE ?? "http://localhost:8081";
 const ICE_SERVERS = [
   { urls: "stun:stun.l.google.com:19302" },
   { urls: "stun:stun1.l.google.com:19302" },
+  { urls: "stun:stun2.l.google.com:19302" },
+  { urls: "stun:stun3.l.google.com:19302" },
+  { urls: "stun:stun4.l.google.com:19302" },
   // TURN relays — required for mobile/carrier NAT (symmetric NAT) connectivity
   {
     urls: [
@@ -50,6 +53,7 @@ export function useWebRTC() {
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
   const pendingIceRef = useRef([]);
+  const pendingSignalsRef = useRef([]); // Buffer for signals arriving before PC is ready
   const remoteDescSetRef = useRef(false);
   const hasSentOfferRef = useRef(false);
   const signalSubRef = useRef({ code: null, subscribed: false });
@@ -126,13 +130,21 @@ export function useWebRTC() {
       if (!msg?.body) return;
       let data; try { data = JSON.parse(msg.body); } catch { return; }
       if (data?.from === username) return;
-      const pc = pcRef.current; if (!pc) return;
+      
       const { type, payload } = data;
+      const pc = pcRef.current;
+      
+      // If PC isn't ready, buffer the signal
+      if (!pc) {
+        pendingSignalsRef.current.push(data);
+        return;
+      }
+
       try {
         if (type === "offer") {
           await pc.setRemoteDescription(new RTCSessionDescription(payload));
           remoteDescSetRef.current = true;
-          const answer = await pc.createAnswer();
+          const answer = await pc.createAnswer({ offerToReceiveVideo: true, offerToReceiveAudio: true });
           await pc.setLocalDescription(answer);
           publishSignal(code, "answer", pc.localDescription);
           while (pendingIceRef.current.length) await pc.addIceCandidate(new RTCIceCandidate(pendingIceRef.current.shift()));
@@ -160,6 +172,27 @@ export function useWebRTC() {
 
     const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS, iceTransportPolicy: "all" });
     pcRef.current = pc;
+
+    // Process any buffered signals that arrived while we were initializing
+    while (pendingSignalsRef.current.length) {
+      const data = pendingSignalsRef.current.shift();
+      const { type, payload } = data;
+      try {
+        if (type === "offer") {
+          await pc.setRemoteDescription(new RTCSessionDescription(payload));
+          remoteDescSetRef.current = true;
+          const answer = await pc.createAnswer({ offerToReceiveVideo: true, offerToReceiveAudio: true });
+          await pc.setLocalDescription(answer);
+          publishSignal(code, "answer", pc.localDescription);
+        } else if (type === "answer") {
+          await pc.setRemoteDescription(new RTCSessionDescription(payload));
+          remoteDescSetRef.current = true;
+        } else if (type === "ice") {
+          if (!remoteDescSetRef.current) pendingIceRef.current.push(payload);
+          else await pc.addIceCandidate(new RTCIceCandidate(payload));
+        }
+      } catch (e) { console.error("Buffered signal error:", e); }
+    }
 
     pc.onicecandidate = e => { if (e.candidate) publishSignal(code, "ice", e.candidate); };
 
@@ -207,7 +240,7 @@ export function useWebRTC() {
     const isMobileUA = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
     const videoConstraints = isMobileUA
       ? { width: { ideal: 640 }, height: { ideal: 480 }, frameRate: { ideal: 15, max: 20 } }
-      : { width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 24 } };
+      : { width: { ideal: 1280, min: 640 }, height: { ideal: 720, min: 480 } };
 
     const stream = await navigator.mediaDevices.getUserMedia({
       video: videoConstraints,

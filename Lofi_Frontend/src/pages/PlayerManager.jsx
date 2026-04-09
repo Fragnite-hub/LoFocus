@@ -282,7 +282,7 @@ export default function PlayerManager({ playlist, hideOverlays }) {
                       {[
                         { step: 1, text: "Log in at", link: "https://developer.spotify.com", linkText: "Spotify for Developers", suffix: "." },
                         { step: 2, text: "Click your Profile Name (top right) and select 'Dashboard'." },
-                        { step: 3, text: "Click 'Create app'. Use name 'LoFocus' and add this Redirect URI:", isUri: true },
+                        { step: 3, text: "Click 'Create app'. Use App name as 'LoFocus' (and same for Description) and add this Redirect URI:", isUri: true },
                         { step: 4, text: "Check 'Web API' & 'Agreement', click 'Create', then copy your 'Client ID' from Settings." }
                       ].map((s, i) => (
                         <div key={i} style={{ display: "flex", gap: "12px", marginBottom: "16px" }}>
