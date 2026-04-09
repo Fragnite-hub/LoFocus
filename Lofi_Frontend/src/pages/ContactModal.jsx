@@ -11,8 +11,8 @@ export default function ContactModal({ isOpen, onClose }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!email || !message) {
-      showToast("Please fill out all fields.", "error");
+    if (!message.trim()) {
+      showToast("Please write a message before sending.", "error");
       return;
     }
 

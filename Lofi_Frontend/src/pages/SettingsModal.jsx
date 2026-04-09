@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { getSettings, saveSettings } from "../hooks/useSettings";
 
+// All desktop backgrounds
 const AVAILABLE_BACKGROUNDS = [
   "Lofi Default.mp4",
   "Sunset.mp4",
@@ -15,7 +16,22 @@ const AVAILABLE_BACKGROUNDS = [
   "SpiderMan.mp4"
 ];
 
+// Lightweight mobile backgrounds — user compresses these and places them in
+// public/backgrounds/mobile/ with the same filenames.
+const MOBILE_BACKGROUNDS = [
+  "SpiderMan.mp4",
+  "Gaming Room.mp4",
+  "Lofi Default.mp4",
+  "Minecraft.mp4",
+];
+
+const isMobileDevice = () =>
+  typeof window !== "undefined" &&
+  (window.innerWidth < 900 || navigator.maxTouchPoints > 1);
+
 export default function SettingsModal({ isOpen, onClose }) {
+  const mobile = isMobileDevice();
+  const backgrounds = mobile ? MOBILE_BACKGROUNDS : AVAILABLE_BACKGROUNDS;
   // Local state for edits
   
   // Local state for edits
@@ -134,34 +150,52 @@ export default function SettingsModal({ isOpen, onClose }) {
           {/* Backgrounds Section */}
           <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
              <h3 style={{ fontSize: "16px", marginBottom: "16px", fontWeight: "600", color: "white" }}>Environment</h3>
-             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", paddingRight: "4px" }}>
-               {AVAILABLE_BACKGROUNDS.map(fileName => (
-                 <button 
-                    key={fileName}
-                    onClick={() => setBg(fileName)}
-                    style={{ 
-                       background: bg === fileName ? "white" : "#161616", 
-                       color: bg === fileName ? "black" : "#aaa", 
-                       border: "1px solid", 
-                       borderColor: bg === fileName ? "white" : "#2a2a2a",
-                       padding: "12px 14px", 
-                       borderRadius: "10px", 
-                       cursor: "pointer", 
-                       fontSize: "13px",
-                       fontWeight: "600",
-                       textAlign: "left",
-                       transition: "all 0.15s ease",
-                       whiteSpace: "nowrap",
-                       overflow: "hidden",
-                       textOverflow: "ellipsis"
-                    }}
-                    onMouseOver={e => { if(bg !== fileName) e.currentTarget.style.borderColor = "#666"; }}
-                    onMouseOut={e => { if(bg !== fileName) e.currentTarget.style.borderColor = "#2a2a2a"; }}
-                  >
-                   {fileName.replace(".mp4", "")}
-                 </button>
-               ))}
-             </div>
+             
+             {mobile ? (
+               <div style={{ 
+                 background: "rgba(99,102,241,0.05)", 
+                 border: "1px dashed rgba(99,102,241,0.3)", 
+                 borderRadius: "12px", 
+                 padding: "20px",
+                 textAlign: "center"
+               }}>
+                 <div style={{ fontSize: "24px", marginBottom: "12px" }}>🕷️</div>
+                 <div style={{ fontSize: "14px", fontWeight: "600", color: "#818cf8", marginBottom: "8px" }}>Fixed Mobile Environment</div>
+                 <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.5)", lineHeight: "1.5", margin: 0 }}>
+                   Spider-Man is pinned for peak mobile performance. <br/>
+                   Switch to <b>Desktop</b> to unlock all 10 themes.
+                 </p>
+               </div>
+             ) : (
+               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", paddingRight: "4px" }}>
+                 {backgrounds.map(fileName => (
+                   <button 
+                      key={fileName}
+                      onClick={() => setBg(fileName)}
+                      style={{ 
+                         background: bg === fileName ? "white" : "#161616", 
+                         color: bg === fileName ? "black" : "#aaa", 
+                         border: "1px solid", 
+                         borderColor: bg === fileName ? "white" : "#2a2a2a",
+                         padding: "12px 14px", 
+                         borderRadius: "10px", 
+                         cursor: "pointer", 
+                         fontSize: "13px",
+                         fontWeight: "600",
+                         textAlign: "left",
+                         transition: "all 0.15s ease",
+                         whiteSpace: "nowrap",
+                         overflow: "hidden",
+                         textOverflow: "ellipsis"
+                      }}
+                      onMouseOver={e => { if(bg !== fileName) e.currentTarget.style.borderColor = "#666"; }}
+                      onMouseOut={e => { if(bg !== fileName) e.currentTarget.style.borderColor = "#2a2a2a"; }}
+                    >
+                     {fileName.replace(".mp4", "")}
+                   </button>
+                 ))}
+               </div>
+             )}
           </div>
 
 

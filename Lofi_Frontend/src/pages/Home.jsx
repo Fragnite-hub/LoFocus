@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import TopControls from "./TopControls";
 import FocusTimer from "./FocusTimer";
 import ProgressCard from "./ProgressCard";
+import { getClientId } from "../clientId";
 
 // Use backend URL from ENV in production. In dev (empty string), it elegantly falls back to Vite's local proxy.
 const API_BASE = import.meta.env.VITE_API_BASE ?? "";
@@ -44,7 +45,10 @@ export default function Home({ onOpenNotes }) {
       setShowCelebration(true);
       // Run deletions in background
       Promise.all(completedList.map(t => 
-        fetch(`${API_BASE}/api/todos/${t.id}`, { method: 'DELETE' })
+        fetch(`${API_BASE}/api/todos/${t.id}`, {
+          method: 'DELETE',
+          headers: { "X-Client-Id": getClientId() },
+        })
       )).then(() => {
         setTimeout(() => {
           setShowCelebration(false);
@@ -57,7 +61,10 @@ export default function Home({ onOpenNotes }) {
 
   const fetchTodos = (skipCheck = false) => {
     // Prevent fetching if currently celebrating to avoid visual blips
-    fetch(`${API_BASE}/api/todos?t=${Date.now()}`, { cache: "no-store" })
+    fetch(`${API_BASE}/api/todos?t=${Date.now()}`, {
+      cache: "no-store",
+      headers: { "X-Client-Id": getClientId() },
+    })
       .then((res) => res.json())
       .then((data) => {
         if (!skipCheck) {

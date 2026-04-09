@@ -17,6 +17,7 @@ public class Todo {
     private boolean completed = false;
     private String category;       // DSA / Study / Project
     private Integer priority = 1;  // 1–3 maybe
+    private String clientId;       // browser-generated UUID — isolates todos per user
     private LocalDateTime createdAt = LocalDateTime.now();
     public Long getId() {
         return id;
@@ -61,6 +62,12 @@ public class Todo {
         this.createdAt = createdAt;
     }
 
+    public String getClientId() {
+        return clientId;
+    }
+    public void setClientId(String clientId) {
+        this.clientId = clientId;
+    }
     // getters + setters
 }
 

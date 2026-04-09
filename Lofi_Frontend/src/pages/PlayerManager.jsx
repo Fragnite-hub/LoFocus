@@ -69,7 +69,10 @@ export default function PlayerManager({ playlist, hideOverlays }) {
 
   const [showPremiumModal, setShowPremiumModal] = useState(false);
   const [modalState, setModalState] = useState("ask"); // "ask" | "free"
-  const [spotifyExpanded, setSpotifyExpanded] = useState(() => sessionStorage.getItem("spotifyExpanded") !== "false");
+  const [spotifyExpanded, setSpotifyExpanded] = useState(() => {
+    if (typeof window !== "undefined" && window.innerWidth < 768) return false; // collapsed on mobile
+    return sessionStorage.getItem("spotifyExpanded") !== "false";
+  });
 
   const handleLogout = () => {
     localStorage.removeItem("spotifyToken");

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { getClientId } from "../clientId";
 
 // Use backend URL from ENV in production. In dev (empty string), it elegantly falls back to Vite's local proxy.
 const API_BASE = import.meta.env.VITE_API_BASE ?? "";
@@ -37,14 +38,16 @@ export default function NotesModal({ isOpen, onClose, onTodosChanged }) {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch(`${API_BASE}/api/todos?t=${Date.now()}`, { cache: "no-store" });
+      const res = await fetch(`${API_BASE}/api/todos?t=${Date.now()}`, {
+        cache: "no-store",
+        headers: { "X-Client-Id": getClientId() },
+      });
       if (!res.ok) throw new Error(`Failed to fetch todos (${res.status})`);
       const data = await res.json();
       const todos = Array.isArray(data) ? data : [];
       setNotes(todos);
       const uncompleted = todos.filter(t => !t.completed);
       if (uncompleted.length > 0) {
-        // If the selected id is no longer uncompleted, pick the first
         if (!selectedId || !uncompleted.find(t => t.id === selectedId)) {
           setSelectedId(uncompleted[0].id);
         }
@@ -126,7 +129,7 @@ export default function NotesModal({ isOpen, onClose, onTodosChanged }) {
 
       const res = await fetch(url, {
         method: isCreate ? "POST" : "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "X-Client-Id": getClientId() },
         body: JSON.stringify(payload),
       });
       if (!res.ok) throw new Error(`Save failed (${res.status})`);
@@ -157,6 +160,7 @@ export default function NotesModal({ isOpen, onClose, onTodosChanged }) {
     try {
       const res = await fetch(`${API_BASE}/api/todos/${selectedId}`, {
         method: "DELETE",
+        headers: { "X-Client-Id": getClientId() },
       });
       if (!res.ok) throw new Error(`Delete failed (${res.status})`);
       onTodosChanged?.();
@@ -176,7 +180,7 @@ export default function NotesModal({ isOpen, onClose, onTodosChanged }) {
       const payload = { ...selected, completed: true };
       const res = await fetch(`${API_BASE}/api/todos/${selectedId}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "X-Client-Id": getClientId() },
         body: JSON.stringify(payload),
       });
       if (!res.ok) throw new Error(`Complete failed (${res.status})`);
