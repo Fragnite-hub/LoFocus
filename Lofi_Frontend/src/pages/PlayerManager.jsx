@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import MusicPlayer from "./MusicPlayer";
 import SpotifyPlayer from "./SpotifyPlayer";
-import { redirectToAuthCodeFlow, getAccessToken } from "../spotify";
+import { redirectToAuthCodeFlow, getAccessToken, redirectUri } from "../spotify";
 import { useNavigate } from "react-router-dom";
 import { showToast } from "../toast";
 
@@ -68,11 +68,25 @@ export default function PlayerManager({ playlist, hideOverlays }) {
   };
 
   const [showPremiumModal, setShowPremiumModal] = useState(false);
-  const [modalState, setModalState] = useState("ask"); // "ask" | "free"
+  const [modalState, setModalState] = useState("ask"); // "ask" | "free" | "custom"
+  const [customClientId, setCustomClientId] = useState(localStorage.getItem("custom_spotify_client_id") || "");
   const [spotifyExpanded, setSpotifyExpanded] = useState(() => {
     if (typeof window !== "undefined" && window.innerWidth < 768) return false; // collapsed on mobile
     return sessionStorage.getItem("spotifyExpanded") !== "false";
   });
+
+  const saveCustomIdAndConnect = () => {
+    if (!customClientId.trim()) {
+      showToast("Please enter a Client ID", "error");
+      return;
+    }
+    // Clear old state for a clean handshake
+    localStorage.removeItem("spotifyToken");
+    localStorage.removeItem("verifier");
+    
+    localStorage.setItem("custom_spotify_client_id", customClientId.trim());
+    redirectToAuthCodeFlow();
+  };
 
   const handleLogout = () => {
     localStorage.removeItem("spotifyToken");
@@ -209,30 +223,98 @@ export default function PlayerManager({ playlist, hideOverlays }) {
 
                 {modalState === "ask" ? (
                   <>
-                     <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "16px" }}>
-                       <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#1DB954", boxShadow: "0 0 10px #1DB954" }}></div>
-                       <h2 style={{ margin: 0, fontSize: "20px", fontWeight: "700", color: "#fff", letterSpacing: "0.5px" }}>Spotify Connect</h2>
-                     </div>
-                     <p style={{ fontSize: "14px", color: "rgba(255,255,255,0.6)", lineHeight: "1.6", marginBottom: "32px", fontFamily: "'JetBrains Mono', monospace" }}>
-                       To sync your music and control playback seamlessly on this dashboard, Spotify strictly requires an active <strong>Premium Account</strong>. Free accounts block external web players.
-                     </p>
-                     
-                     <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                       <button onClick={() => redirectToAuthCodeFlow()} style={{
-                         width: "100%", padding: "14px", borderRadius: "12px", border: "none",
-                         background: "#1DB954", color: "white", fontSize: "14px", fontWeight: "700",
-                         cursor: "pointer", transition: "all 0.2s ease"
-                       }} onMouseOver={e => e.currentTarget.style.transform = "scale(1.02)"} onMouseOut={e => e.currentTarget.style.transform = "scale(1)"}>
-                         Yes, I have Spotify Premium
-                       </button>
-                       <button onClick={() => setModalState("free")} style={{
-                         width: "100%", padding: "14px", borderRadius: "12px", border: "1px solid rgba(255,255,255,0.1)",
-                         background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.8)", fontSize: "14px", fontWeight: "600",
-                         cursor: "pointer", transition: "all 0.2s ease"
-                       }} onMouseOver={e => e.currentTarget.style.background = "rgba(255,255,255,0.08)"} onMouseOut={e => e.currentTarget.style.background = "rgba(255,255,255,0.05)"}>
-                         I am on the Free Tier
-                       </button>
-                     </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "16px" }}>
+                      <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#1DB954", boxShadow: "0 0 10px #1DB954" }}></div>
+                      <h2 style={{ margin: 0, fontSize: "20px", fontWeight: "700", color: "#fff", letterSpacing: "0.5px" }}>Spotify Connect</h2>
+                    </div>
+                    
+                    <p style={{ fontSize: "14px", color: "rgba(255,255,255,0.6)", lineHeight: "1.6", marginBottom: "32px", fontFamily: "'JetBrains Mono', monospace" }}>
+                      To sync your music and control playback seamlessly on this dashboard, Spotify strictly requires an active <strong>Premium Account</strong>.
+                    </p>
+                    
+                    <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                      <button onClick={() => redirectToAuthCodeFlow()} style={{
+                        width: "100%", padding: "14px", borderRadius: "12px", border: "none",
+                        background: "#1DB954", color: "white", fontSize: "14px", fontWeight: "700",
+                        cursor: "pointer", transition: "all 0.2s ease"
+                      }} onMouseOver={e => e.currentTarget.style.transform = "scale(1.02)"} onMouseOut={e => e.currentTarget.style.transform = "scale(1)"}>
+                        Yes, I have Spotify Premium
+                      </button>
+
+                      {/* Show setup guide only for new users who haven't registered an ID yet */}
+                      {!localStorage.getItem("custom_spotify_client_id") && (
+                        <button onClick={() => setModalState("custom")} style={{
+                          width: "100%", padding: "14px", borderRadius: "12px", border: "1px solid rgba(255,255,255,0.15)",
+                          background: "rgba(255,255,255,0.02)", color: "rgba(255,255,255,0.5)", fontSize: "14px", fontWeight: "600",
+                          cursor: "pointer", transition: "all 0.2s ease"
+                        }} onMouseOver={e => { e.currentTarget.style.background = "rgba(255,255,255,0.05)"; e.currentTarget.style.color = "white"; }} onMouseOut={e => { e.currentTarget.style.background = "rgba(255,255,255,0.02)"; e.currentTarget.style.color = "rgba(255,255,255,0.5)"; }}>
+                          New User? / Setup Guide
+                        </button>
+                      )}
+
+                      <button onClick={() => setModalState("free")} style={{
+                        width: "100%", padding: "14px", borderRadius: "12px", border: "1px solid rgba(255,255,255,0.1)",
+                        background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.8)", fontSize: "14px", fontWeight: "600",
+                        cursor: "pointer", transition: "all 0.2s ease"
+                      }} onMouseOver={e => e.currentTarget.style.background = "rgba(255,255,255,0.08)"} onMouseOut={e => e.currentTarget.style.background = "rgba(255,255,255,0.05)"}>
+                        I am on the Free Tier
+                      </button>
+                    </div>
+
+                    {localStorage.getItem("custom_spotify_client_id") && (
+                      <div style={{ textAlign: "center", marginTop: "16px" }}>
+                         <button onClick={() => setModalState("custom")} style={{ background: "transparent", border: "none", color: "rgba(255,255,255,0.3)", fontSize: "11px", cursor: "pointer", textDecoration: "underline" }}>Update Personal ID Settings</button>
+                      </div>
+                    )}
+                  </>
+                ) : modalState === "custom" ? (
+                  <>
+                    <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "16px" }}>
+                      <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#1DB954", boxShadow: "0 0 10px #1DB954" }}></div>
+                      <h2 style={{ margin: 0, fontSize: "20px", fontWeight: "700", color: "#fff", letterSpacing: "0.5px" }}>Personal ID Setup</h2>
+                    </div>
+                    
+                    <p style={{ fontSize: "14px", color: "rgba(255,255,255,0.6)", lineHeight: "1.6", marginBottom: "20px", fontFamily: "'JetBrains Mono', monospace" }}>
+                      To ensure unlimited, stable playback, we recommend connecting via a <strong>Personal ID</strong>. Setup is free, takes ~30s, and only required once.
+                    </p>
+
+                    <div style={{ maxHeight: "280px", overflowY: "auto", paddingRight: "8px", marginBottom: "20px" }}>
+                      {[
+                        { step: 1, text: "Log in at", link: "https://developer.spotify.com", linkText: "Spotify for Developers", suffix: "." },
+                        { step: 2, text: "Click your Profile Name (top right) and select 'Dashboard'." },
+                        { step: 3, text: "Click 'Create app'. Use name 'LoFocus' and add this Redirect URI:", isUri: true },
+                        { step: 4, text: "Check 'Web API' & 'Agreement', click 'Create', then copy your 'Client ID' from Settings." }
+                      ].map((s, i) => (
+                        <div key={i} style={{ display: "flex", gap: "12px", marginBottom: "16px" }}>
+                          <span style={{ flexShrink: 0, width: "24px", height: "24px", borderRadius: "50%", background: "rgba(29, 185, 84, 0.2)", color: "#1DB954", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "12px", fontWeight: "bold" }}>{s.step}</span>
+                          <div style={{ fontSize: "13px", color: "rgba(255,255,255,0.7)", lineHeight: "1.5" }}>
+                            {s.text} {s.link && <a href={s.link} target="_blank" rel="noreferrer" style={{ color: "#1DB954", textDecoration: "underline" }}>{s.linkText}</a>} {s.suffix}
+                            {s.isUri && (
+                              <div style={{ marginTop: "8px", display: "flex", alignItems: "center", gap: "8px", background: "rgba(255,255,255,0.05)", padding: "6px 10px", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.1)" }}>
+                                <code style={{ fontSize: "11px", color: "#888", flex: 1, overflow: "hidden", textOverflow: "ellipsis" }}>{redirectUri}</code>
+                                <button onClick={() => { navigator.clipboard.writeText(redirectUri); showToast("Copied URI!", "success"); }} style={{ background: "rgba(29, 185, 84, 0.2)", color: "#1DB954", border: "none", padding: "4px 8px", borderRadius: "4px", fontSize: "10px", fontWeight: "bold", cursor: "pointer" }}>Copy</button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div style={{ marginBottom: "24px" }}>
+                      <label style={{ display: "block", fontSize: "11px", color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: "1px", marginBottom: "8px", fontWeight: "bold" }}>Paste Client ID</label>
+                      <input 
+                        type="text" 
+                        value={customClientId}
+                        onChange={e => setCustomClientId(e.target.value)}
+                        placeholder="e.g. 7482bh3...f81"
+                        style={{ width: "100%", padding: "12px", borderRadius: "10px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "white", fontSize: "14px", boxSizing: "border-box", outline: "none" }}
+                      />
+                    </div>
+
+                    <div style={{ display: "flex", gap: "10px" }}>
+                      <button onClick={() => setModalState("ask")} style={{ flex: 1, padding: "12px", borderRadius: "12px", border: "1px solid rgba(255,255,255,0.1)", background: "transparent", color: "white", fontWeight: "600", cursor: "pointer" }}>Back</button>
+                      <button onClick={saveCustomIdAndConnect} style={{ flex: 2, padding: "12px", borderRadius: "12px", border: "none", background: "#1DB954", color: "white", fontWeight: "700", cursor: "pointer" }}>Apply & Connect</button>
+                    </div>
                   </>
                 ) : (
                   <>

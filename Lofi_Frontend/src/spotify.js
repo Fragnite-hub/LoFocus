@@ -2,8 +2,11 @@ import { showToast } from "./toast";
 
 export const authEndpoint = "https://accounts.spotify.com/authorize";
 
-const clientId = import.meta.env.VITE_SPOTIFY_CLIENT_ID;
-const redirectUri = import.meta.env.VITE_SPOTIFY_REDIRECT_URI;
+export const getSpotifyClientId = () => 
+  localStorage.getItem("custom_spotify_client_id") || import.meta.env.VITE_SPOTIFY_CLIENT_ID;
+
+export const redirectUri = import.meta.env.VITE_SPOTIFY_REDIRECT_URI || 
+  "https://www.lofocus.space/callback";
 
 const scopes = [
   "user-read-email",
@@ -22,7 +25,7 @@ export async function redirectToAuthCodeFlow() {
     localStorage.setItem("verifier", verifier);
 
     const params = new URLSearchParams();
-    params.append("client_id", clientId);
+    params.append("client_id", getSpotifyClientId());
     params.append("response_type", "code");
     params.append("redirect_uri", redirectUri);
     params.append("scope", scopes);
@@ -41,7 +44,7 @@ export async function getAccessToken(code) {
     }
 
     const params = new URLSearchParams();
-    params.append("client_id", clientId);
+    params.append("client_id", getSpotifyClientId());
     params.append("grant_type", "authorization_code");
     params.append("code", code);
     params.append("redirect_uri", redirectUri);
