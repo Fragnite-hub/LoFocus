@@ -36,10 +36,10 @@ export default function CreatorBadge({ onOpenContact }) {
         onMouseOver={(e) => (e.currentTarget.style.color = "rgba(255,255,255,0.8)")}
         onMouseOut={(e) => (e.currentTarget.style.color = "rgba(255,255,255,0.3)")}
         style={{
-          background: expanded ? "transparent" : "rgba(0,0,0,0.45)",
-          border: expanded ? "none" : "1px solid rgba(255,255,255,0.12)",
-          backdropFilter: expanded ? "none" : "blur(8px)",
-          color: "rgba(255,255,255,0.3)",
+          background: expanded ? "transparent" : "rgba(255,255,255,0.08)",
+          border: expanded ? "none" : "1px solid rgba(255,255,255,0.15)",
+          backdropFilter: expanded ? "none" : "blur(12px)",
+          color: "rgba(255,255,255,0.5)",
           cursor: "pointer",
           fontSize: "10px",
           width: expanded ? "18px" : "28px",
@@ -51,6 +51,7 @@ export default function CreatorBadge({ onOpenContact }) {
           flexShrink: 0,
           transition: "all 0.2s ease",
         }}
+        title={expanded ? "Collapse" : "Connect"}
       >
         {expanded ? "❮" : "❯"}
       </button>
@@ -58,7 +59,7 @@ export default function CreatorBadge({ onOpenContact }) {
       {/* Expandable link */}
       <div
         style={{
-          width: expanded ? "260px" : "0px",
+          width: expanded ? "240px" : "0px",
           overflow: "hidden",
           transition: "width 0.35s cubic-bezier(0.2, 0.8, 0.2, 1)",
           whiteSpace: "nowrap",

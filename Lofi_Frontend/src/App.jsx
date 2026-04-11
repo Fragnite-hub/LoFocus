@@ -9,6 +9,7 @@ import PlayerManager from "./pages/PlayerManager";
 import NotesModal from "./pages/NotesModal";
 import ContactModal from "./pages/ContactModal";
 import CreatorBadge from "./pages/CreatorBadge";
+import GithubButton from "./pages/GithubButton";
 import { useSettings } from "./hooks/useSettings";
 
 // ---------------------------------------------------------------------------
@@ -75,6 +76,9 @@ export default function App() {
     <BrowserRouter>
       {/* Always-visible background */}
       <BackgroundVideo src={settings.background} />
+
+      {/* Top Left GitHub Link */}
+      <GithubButton />
 
       {/* Always-visible navbar */}
       <nav className="navbar">

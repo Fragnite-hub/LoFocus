@@ -170,8 +170,19 @@ export function useWebRTC() {
     hasSentOfferRef.current = false;
     remoteStreamRef.current = new MediaStream();
 
-    const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS, iceTransportPolicy: "all" });
+    const pc = new RTCPeerConnection({ 
+      iceServers: ICE_SERVERS, 
+      iceTransportPolicy: "all",
+      iceCandidatePoolSize: 10 // Pre-gather candidates to speed up long-distance connection
+    });
     pcRef.current = pc;
+
+    // Log ICE candidate errors silently for debugging
+    pc.onicecandidateerror = e => {
+      if (e.errorCode >= 701 && e.errorCode <= 799) {
+        console.warn("ICE Relay Error (TURN might be blocked by local network):", e.url, e.errorText);
+      }
+    };
 
     // Process any buffered signals that arrived while we were initializing
     while (pendingSignalsRef.current.length) {
