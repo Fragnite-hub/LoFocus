@@ -10,6 +10,7 @@ const ICE_SERVERS = [
   { urls: "stun:stun2.l.google.com:19302" },
   { urls: "stun:stun3.l.google.com:19302" },
   { urls: "stun:stun4.l.google.com:19302" },
+  { urls: "stun:stun.cloudflare.com:3478" }, // Extremely reliable fallback STUN
   // TURN relays — required for mobile/carrier NAT (symmetric NAT) connectivity
   {
     urls: [
@@ -170,12 +171,34 @@ export function useWebRTC() {
     hasSentOfferRef.current = false;
     remoteStreamRef.current = new MediaStream();
 
+    // 1. MUST WAIT FOR CAMERA FIRST to avoid answering offers without media tracks
+    let stream;
+    try {
+      const isMobileUA = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      const videoConstraints = isMobileUA
+        ? { width: { ideal: 640 }, height: { ideal: 480 }, frameRate: { ideal: 15, max: 20 } }
+        : { width: { ideal: 1280, min: 640 }, height: { ideal: 720, min: 480 } };
+
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: videoConstraints,
+        audio: { echoCancellation: true, noiseSuppression: true },
+      });
+      localStreamRef.current = stream;
+      if (localVideoRef.current) localVideoRef.current.srcObject = stream;
+    } catch (err) {
+      setCallError("Camera/Mic access denied or unavailable.");
+      return;
+    }
+
+    // 2. Initialize Peer Connection
     const pc = new RTCPeerConnection({ 
       iceServers: ICE_SERVERS, 
       iceTransportPolicy: "all",
       iceCandidatePoolSize: 10 // Pre-gather candidates to speed up long-distance connection
     });
-    pcRef.current = pc;
+    
+    // 3. Add tracks immediately so any buffered 'offer' will generate a proper 'answer'
+    stream.getTracks().forEach(t => pc.addTrack(t, stream));
 
     // Log ICE candidate errors silently for debugging
     pc.onicecandidateerror = e => {
@@ -184,42 +207,21 @@ export function useWebRTC() {
       }
     };
 
-    // Process any buffered signals that arrived while we were initializing
-    while (pendingSignalsRef.current.length) {
-      const data = pendingSignalsRef.current.shift();
-      const { type, payload } = data;
-      try {
-        if (type === "offer") {
-          await pc.setRemoteDescription(new RTCSessionDescription(payload));
-          remoteDescSetRef.current = true;
-          const answer = await pc.createAnswer({ offerToReceiveVideo: true, offerToReceiveAudio: true });
-          await pc.setLocalDescription(answer);
-          publishSignal(code, "answer", pc.localDescription);
-        } else if (type === "answer") {
-          await pc.setRemoteDescription(new RTCSessionDescription(payload));
-          remoteDescSetRef.current = true;
-        } else if (type === "ice") {
-          if (!remoteDescSetRef.current) pendingIceRef.current.push(payload);
-          else await pc.addIceCandidate(new RTCIceCandidate(payload));
-        }
-      } catch (e) { console.error("Buffered signal error:", e); }
-    }
-
     pc.onicecandidate = e => { if (e.candidate) publishSignal(code, "ice", e.candidate); };
 
     pc.ontrack = e => {
       // Chrome: e.streams[0] is a managed stream — use directly
       // Firefox: e.streams[0] may be undefined — fall back to e.track
-      let stream;
+      let s;
       if (e.streams?.[0]) {
-        stream = e.streams[0];
-        remoteStreamRef.current = stream;
+        s = e.streams[0];
+        remoteStreamRef.current = s;
       } else {
         remoteStreamRef.current.addTrack(e.track);
-        stream = remoteStreamRef.current;
+        s = remoteStreamRef.current;
       }
       if (remoteVideoRef.current) {
-        remoteVideoRef.current.srcObject = stream;
+        remoteVideoRef.current.srcObject = s;
         remoteVideoRef.current.play().catch(() => {});
       }
     };
@@ -231,9 +233,9 @@ export function useWebRTC() {
         // Fallback: grab tracks from receivers if ontrack was missed
         const el = remoteVideoRef.current;
         if (el && !el.srcObject?.getVideoTracks()?.length) {
-          const stream = new MediaStream();
-          pc.getReceivers().forEach(r => { if (r.track) stream.addTrack(r.track); });
-          if (stream.getTracks().length) { remoteStreamRef.current = stream; el.srcObject = stream; el.play().catch(() => {}); }
+          const s2 = new MediaStream();
+          pc.getReceivers().forEach(r => { if (r.track) s2.addTrack(r.track); });
+          if (s2.getTracks().length) { remoteStreamRef.current = s2; el.srcObject = s2; el.play().catch(() => {}); }
         }
       } else if (s === "failed") {
         pc.restartIce?.();
@@ -248,19 +250,33 @@ export function useWebRTC() {
       if (["disconnected", "failed"].includes(pc.connectionState)) setCallError("Peer disconnected.");
     };
 
-    const isMobileUA = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-    const videoConstraints = isMobileUA
-      ? { width: { ideal: 640 }, height: { ideal: 480 }, frameRate: { ideal: 15, max: 20 } }
-      : { width: { ideal: 1280, min: 640 }, height: { ideal: 720, min: 480 } };
+    // 4. Mark PC as ready
+    pcRef.current = pc;
 
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: videoConstraints,
-      audio: { echoCancellation: true, noiseSuppression: true },
-    });
-    localStreamRef.current = stream;
-    if (localVideoRef.current) localVideoRef.current.srcObject = stream;
-    stream.getTracks().forEach(t => pc.addTrack(t, stream));
+    // 5. Process any buffered signals that arrived while we were waiting for camera approval!
+    while (pendingSignalsRef.current.length) {
+      const data = pendingSignalsRef.current.shift();
+      const { type, payload } = data;
+      try {
+        if (type === "offer") {
+          await pc.setRemoteDescription(new RTCSessionDescription(payload));
+          remoteDescSetRef.current = true;
+          const answer = await pc.createAnswer({ offerToReceiveVideo: true, offerToReceiveAudio: true });
+          await pc.setLocalDescription(answer);
+          publishSignal(code, "answer", pc.localDescription);
+          while (pendingIceRef.current.length) await pc.addIceCandidate(new RTCIceCandidate(pendingIceRef.current.shift()));
+        } else if (type === "answer") {
+          await pc.setRemoteDescription(new RTCSessionDescription(payload));
+          remoteDescSetRef.current = true;
+          while (pendingIceRef.current.length) await pc.addIceCandidate(new RTCIceCandidate(pendingIceRef.current.shift()));
+        } else if (type === "ice") {
+          if (!remoteDescSetRef.current) pendingIceRef.current.push(payload);
+          else await pc.addIceCandidate(new RTCIceCandidate(payload));
+        }
+      } catch (e) { console.error("Buffered signal error:", e); }
+    }
 
+    // 6. Finally, if we are the initiator, make the offer
     if (makeOffer && !hasSentOfferRef.current) {
       hasSentOfferRef.current = true;
       const offer = await pc.createOffer({ offerToReceiveVideo: true, offerToReceiveAudio: true });
